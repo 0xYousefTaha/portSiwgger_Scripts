@@ -63,6 +63,7 @@ python3 Info_scanner.py -u <target_url>
 
 📹 [Video](https://www.youtube.com/watch?v=XxCMx4J-o4k)
 
+
 ---
 
 ## Path Traversal Scanner
@@ -106,4 +107,7 @@ python3 PathTraversal.py -u <target_url>
   python3 PathTraversal.py -u https://vulnerable-site.com -p 127.0.0.1:9090
   ```
 
+#### Video Tutorial
+
+📹 [Video](https://www.youtube.com/watch?v=reytcvH-buk)
 
