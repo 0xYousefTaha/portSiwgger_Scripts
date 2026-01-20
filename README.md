@@ -20,15 +20,10 @@ Scripts that automate solutions for PortSwigger Web Security Academy labs.
 
 2. Install dependencies:
    ```bash
+   python3 -m venv
+   source venv/bin/activate
    pip install requests urllib3 selenium
    ```
-
-3. Install Chrome WebDriver (for Info_scanner_V2.py):
-   - Download from: https://chromedriver.chromium.org/downloads
-   - Or install via package manager (Ubuntu/Debian):
-     ```bash
-     sudo apt-get install chromium-chromedriver
-     ```
 
 ---
 
