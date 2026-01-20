@@ -218,11 +218,4 @@ python3 Broken_Authentication_Fuzzer -u <target_url> [-p PROXY]
 
 ---
 
-## Disclaimer
-
-These scripts are designed for educational purposes and authorized testing only. They should only be used on systems you own or have explicit permission to test. Unauthorized use of these tools on systems without permission may violate laws and terms of service.
-
-PortSwigger Web Security Academy labs are intended for learning web security concepts. Always ensure you have proper authorization before testing any web application.
-
----
 
