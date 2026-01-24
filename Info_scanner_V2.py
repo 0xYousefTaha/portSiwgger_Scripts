@@ -50,8 +50,6 @@ def Automatically_submit(url, answer):
     driver.quit()
     
 
-
-
 def check_Error_messages(session,url, proxies=None) : 
     vulnerable_parameter = "/product?productId='"
     Vulnerable_url = url + vulnerable_parameter
@@ -83,8 +81,6 @@ def check_Error_messages(session,url, proxies=None) :
         print(f"[-] Error: {e}")
 
 
-
-   
 def check_phpinfo(session,url, proxies=None) : 
     exposed_phpinfo_url = url + "/cgi-bin/phpinfo.php"
     print(f"\n================== 2-Checking for Exposed phpinfo.php debug page ==================")
@@ -193,7 +189,7 @@ def Authentication_bypass_deleting_user(session,url, proxies=None) :
         print(f"[-] Error: {e}")
 
 
-def _get_context(text: str, position: int, chars: int = 100) -> str:
+def _get_context(text, position: int, chars: int = 100) -> str:
     """Get context around a position in text"""
     start = max(0, position - chars)
     end = min(len(text), position + chars)

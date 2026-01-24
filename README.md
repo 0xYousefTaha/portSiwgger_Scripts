@@ -20,7 +20,7 @@ Scripts that automate solutions for PortSwigger Web Security Academy labs.
 
 2. Install dependencies:
    ```bash
-   python3 -m venv
+   python3 -m venv venv
    source venv/bin/activate
    pip install requests urllib3 selenium
    ```
