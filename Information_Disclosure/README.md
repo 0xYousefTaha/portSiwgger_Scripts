@@ -71,3 +71,7 @@ python3 Info_scanner_V2.py -u <target_url>
 
 - Chrome browser installed on system
 - All standard requirements from Info_scanner.py
+
+#### Video Tutorial
+
+📹 [Video](https://www.youtube.com/watch?v=AuaK82x94IA)
